@@ -1,0 +1,52 @@
+name: Build GL4ES 1.1.5 for iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build libgl4es_115.dylib
+    runs-on: macos-latest
+
+    steps:
+      - name: Install dependencies
+        run: brew install cmake ldid wget
+
+      - name: Clone GL4ES 1.1.5
+        run: |
+          git clone --depth 1 --branch 1.1.5 https://github.com/ptitSeb/gl4es gl4es
+          cd gl4es
+          wget https://github.com/leetal/ios-cmake/raw/master/ios.toolchain.cmake
+
+      - name: Build GL4ES for iOS arm64
+        run: |
+          cd gl4es
+          cmake -B build \
+            -DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake \
+            -DPLATFORM=OS64 \
+            -DDEFAULT_ES=2 \
+            -DNOX11=ON \
+            -DNOEGL=OFF \
+            -DSTATICLIB=OFF \
+            -DCMAKE_C_FLAGS="-Wno-error=implicit-function-declaration"
+          cmake --build build --config RelWithDebInfo --target GL
+          cp lib/libGL.dylib ../libgl4es_115.dylib
+          ldid -S ../libgl4es_115.dylib
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: libgl4es_115
+          path: libgl4es_115.dylib
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: gl4es-1.1.5-ios
+          name: GL4ES 1.1.5 for iOS
+          files: libgl4es_115.dylib
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
