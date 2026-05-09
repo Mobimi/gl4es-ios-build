@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build libgl4es_114.dylib (v1.1.6)
+    name: Build libgl4es_116.dylib (v1.1.6)
     runs-on: macos-latest
 
     steps:
@@ -33,7 +33,6 @@ jobs:
           void APIENTRY_GL4ES gl4es_glDisableClientStatei(GLenum array, GLuint index) { gl4es_glDisableClientStateIndexed(array, index); }
           EOF
 
-          # Tạo file compat riêng và append vào CMakeLists đúng cách
           cat > src/gl/ios_compat.c << 'EOF'
           #include <stddef.h>
           typedef unsigned int GLenum;
@@ -50,7 +49,6 @@ jobs:
           void glStencilOp(GLenum fail, GLenum zfail, GLenum zpass) { gl4es_glStencilOp(fail, zfail, zpass); }
           EOF
 
-          # Append ios_compat.c vào source list trong CMakeLists.txt
           echo 'target_sources(GL PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gl/ios_compat.c)' >> src/CMakeLists.txt
 
       - name: Build GL4ES for iOS arm64
@@ -59,27 +57,28 @@ jobs:
           cmake -B build \
             -DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake \
             -DPLATFORM=OS64 \
-            -DDEFAULT_ES=2 \
+            -DDEFAULT_ES=3 \
             -DNOX11=ON \
             -DNOEGL=OFF \
             -DSTATICLIB=OFF \
-            -DCMAKE_C_FLAGS="-Wno-error=implicit-function-declaration -Wno-error=unused-function -DNOGLX"
+            -DCMAKE_C_FLAGS="-Wno-error=implicit-function-declaration -Wno-error=unused-function -DNOGLX" \
+            -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-undefined,dynamic_lookup -Wl,-w"
           cmake --build build --config RelWithDebInfo --target GL
-          cp lib/libGL.dylib ../libgl4es_114.dylib
-          ldid -S ../libgl4es_114.dylib
+          cp lib/libGL.dylib ../libgl4es_116.dylib
+          ldid -S ../libgl4es_116.dylib
 
       - name: Upload artifact
         uses: actions/upload-artifact@main
         with:
-          name: libgl4es_114-v1.1.6
-          path: libgl4es_114.dylib
+          name: libgl4es_116-v1.1.6
+          path: libgl4es_116.dylib
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: gl4es-1.1.6-ios
           name: GL4ES 1.1.6 for iOS
-          files: libgl4es_114.dylib
+          files: libgl4es_116.dylib
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
