@@ -24,19 +24,19 @@ jobs:
         run: |
           cd gl4es
 
-          # Fix AliasDecl - remove alias attribute entirely
+          # Fix AliasDecl
           sed -i '' 's/__attribute__((alias(_STM(OLD,DEF))))//g' src/gl/attributes.h
 
-          # Fix glEnableClientStatei and glDisableClientStatei missing symbols
+          # Fix glEnableClientStatei and glDisableClientStatei
           cat >> src/gl/directstate.c << 'EOF'
           void APIENTRY_GL4ES gl4es_glEnableClientStatei(GLenum array, GLuint index) { gl4es_glEnableClientStateIndexed(array, index); }
           void APIENTRY_GL4ES gl4es_glDisableClientStatei(GLenum array, GLuint index) { gl4es_glDisableClientStateIndexed(array, index); }
           EOF
 
-          # Fix missing GL symbols - redirect to gl4es internal functions
-          sed -i '' 's/\bglGetFloatv\b/gl4es_glGetFloatv/g' src/gl/texgen.c
-          sed -i '' 's/\bglStencilFunc\b/gl4es_glStencilFunc/g' src/gl/stencil.c
-          sed -i '' 's/\bglStencilOp\b/gl4es_glStencilOp/g' src/gl/stencil.c
+          # Fix missing GL symbols - dùng perl thay vì sed vì macOS sed không support \b
+          perl -pi -e 's/(?<![_a-zA-Z0-9])glGetFloatv(?![_a-zA-Z0-9])/gl4es_glGetFloatv/g' src/gl/texgen.c
+          perl -pi -e 's/(?<![_a-zA-Z0-9])glStencilFunc(?![_a-zA-Z0-9])/gl4es_glStencilFunc/g' src/gl/stencil.c
+          perl -pi -e 's/(?<![_a-zA-Z0-9])glStencilOp(?![_a-zA-Z0-9])/gl4es_glStencilOp/g' src/gl/stencil.c
 
       - name: Build GL4ES for iOS arm64
         run: |
