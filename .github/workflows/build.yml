@@ -24,19 +24,41 @@ jobs:
         run: |
           cd gl4es
 
-          # Fix AliasDecl
+          # Fix AliasDecl - not supported on Darwin
           sed -i '' 's/__attribute__((alias(_STM(OLD,DEF))))//g' src/gl/attributes.h
 
-          # Fix glEnableClientStatei and glDisableClientStatei
+          # Fix glEnableClientStatei and glDisableClientStatei missing symbols
           cat >> src/gl/directstate.c << 'EOF'
           void APIENTRY_GL4ES gl4es_glEnableClientStatei(GLenum array, GLuint index) { gl4es_glEnableClientStateIndexed(array, index); }
           void APIENTRY_GL4ES gl4es_glDisableClientStatei(GLenum array, GLuint index) { gl4es_glDisableClientStateIndexed(array, index); }
           EOF
 
-          # Fix missing GL symbols - dùng perl thay vì sed vì macOS sed không support \b
-          perl -pi -e 's/(?<![_a-zA-Z0-9])glGetFloatv(?![_a-zA-Z0-9])/gl4es_glGetFloatv/g' src/gl/texgen.c
-          perl -pi -e 's/(?<![_a-zA-Z0-9])glStencilFunc(?![_a-zA-Z0-9])/gl4es_glStencilFunc/g' src/gl/stencil.c
-          perl -pi -e 's/(?<![_a-zA-Z0-9])glStencilOp(?![_a-zA-Z0-9])/gl4es_glStencilOp/g' src/gl/stencil.c
+          # Fix missing glGetFloatv, glStencilFunc, glStencilOp
+          # Thêm alias wrapper vào ios_compat.c thay vì rename trong source gốc
+          cat > src/gl/ios_compat.c << 'EOF'
+          #include "gl_includes.h"
+          #include "loader.h"
+
+          // iOS does not have system libGL, so we provide these aliases
+          // pointing to gl4es internal implementations
+          void glGetFloatv(GLenum pname, GLfloat *params);
+          void glGetFloatv(GLenum pname, GLfloat *params) {
+              gl4es_glGetFloatv(pname, params);
+          }
+
+          void glStencilFunc(GLenum func, GLint ref, GLuint mask);
+          void glStencilFunc(GLenum func, GLint ref, GLuint mask) {
+              gl4es_glStencilFunc(func, ref, mask);
+          }
+
+          void glStencilOp(GLenum fail, GLenum zfail, GLenum zpass);
+          void glStencilOp(GLenum fail, GLenum zfail, GLenum zpass) {
+              gl4es_glStencilOp(fail, zfail, zpass);
+          }
+          EOF
+
+          # Thêm ios_compat.c vào CMakeLists
+          sed -i '' 's|src/gl/logs.c|src/gl/logs.c\n    src/gl/ios_compat.c|g' src/CMakeLists.txt
 
       - name: Build GL4ES for iOS arm64
         run: |
