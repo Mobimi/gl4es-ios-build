@@ -27,38 +27,31 @@ jobs:
           # Fix AliasDecl - not supported on Darwin
           sed -i '' 's/__attribute__((alias(_STM(OLD,DEF))))//g' src/gl/attributes.h
 
-          # Fix glEnableClientStatei and glDisableClientStatei missing symbols
+          # Fix glEnableClientStatei and glDisableClientStatei
           cat >> src/gl/directstate.c << 'EOF'
           void APIENTRY_GL4ES gl4es_glEnableClientStatei(GLenum array, GLuint index) { gl4es_glEnableClientStateIndexed(array, index); }
           void APIENTRY_GL4ES gl4es_glDisableClientStatei(GLenum array, GLuint index) { gl4es_glDisableClientStateIndexed(array, index); }
           EOF
 
-          # Fix missing glGetFloatv, glStencilFunc, glStencilOp
-          # Thêm alias wrapper vào ios_compat.c thay vì rename trong source gốc
+          # Tạo file compat riêng và append vào CMakeLists đúng cách
           cat > src/gl/ios_compat.c << 'EOF'
-          #include "gl_includes.h"
-          #include "loader.h"
+          #include <stddef.h>
+          typedef unsigned int GLenum;
+          typedef int GLint;
+          typedef unsigned int GLuint;
+          typedef float GLfloat;
 
-          // iOS does not have system libGL, so we provide these aliases
-          // pointing to gl4es internal implementations
-          void glGetFloatv(GLenum pname, GLfloat *params);
-          void glGetFloatv(GLenum pname, GLfloat *params) {
-              gl4es_glGetFloatv(pname, params);
-          }
+          void gl4es_glGetFloatv(GLenum pname, GLfloat *params);
+          void gl4es_glStencilFunc(GLenum func, GLint ref, GLuint mask);
+          void gl4es_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass);
 
-          void glStencilFunc(GLenum func, GLint ref, GLuint mask);
-          void glStencilFunc(GLenum func, GLint ref, GLuint mask) {
-              gl4es_glStencilFunc(func, ref, mask);
-          }
-
-          void glStencilOp(GLenum fail, GLenum zfail, GLenum zpass);
-          void glStencilOp(GLenum fail, GLenum zfail, GLenum zpass) {
-              gl4es_glStencilOp(fail, zfail, zpass);
-          }
+          void glGetFloatv(GLenum pname, GLfloat *params) { gl4es_glGetFloatv(pname, params); }
+          void glStencilFunc(GLenum func, GLint ref, GLuint mask) { gl4es_glStencilFunc(func, ref, mask); }
+          void glStencilOp(GLenum fail, GLenum zfail, GLenum zpass) { gl4es_glStencilOp(fail, zfail, zpass); }
           EOF
 
-          # Thêm ios_compat.c vào CMakeLists
-          sed -i '' 's|src/gl/logs.c|src/gl/logs.c\n    src/gl/ios_compat.c|g' src/CMakeLists.txt
+          # Append ios_compat.c vào source list trong CMakeLists.txt
+          echo 'target_sources(GL PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gl/ios_compat.c)' >> src/CMakeLists.txt
 
       - name: Build GL4ES for iOS arm64
         run: |
