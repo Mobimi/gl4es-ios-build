@@ -57,7 +57,7 @@ jobs:
           cmake -B build \
             -DCMAKE_TOOLCHAIN_FILE=ios.toolchain.cmake \
             -DPLATFORM=OS64 \
-            -DDEFAULT_ES=3 \
+            -DDEFAULT_ES=2 \
             -DNOX11=ON \
             -DNOEGL=OFF \
             -DSTATICLIB=OFF \
