@@ -60,6 +60,7 @@ jobs:
             -DDEFAULT_ES=2 \
             -DNOX11=ON \
             -DNOEGL=OFF \
+            -DANGLE=ON \
             -DSTATICLIB=OFF \
             -DCMAKE_C_FLAGS="-Wno-error=implicit-function-declaration -Wno-error=unused-function -DNOGLX" \
             -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-undefined,dynamic_lookup -Wl,-w"
