@@ -61,8 +61,9 @@ jobs:
             -DNOX11=ON \
             -DNOEGL=OFF \
             -DSTATICLIB=OFF \
-            -DCMAKE_C_VISIBILITY_PRESET=default
-            -DCMAKE_VISIBILITY_INLINES_HIDDEN=OFF
+            -DCMAKE_C_VISIBILITY_PRESET=default \
+            -DCMAKE_VISIBILITY_INLINES_HIDDEN=OFF \
+            -DENABLE_VISIBILITY=OFF \
             -DCMAKE_C_FLAGS="-Wno-error=implicit-function-declaration -Wno-error=unused-function -DNOGLX" \
             -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-undefined,dynamic_lookup -Wl,-w"
           cmake --build build --config RelWithDebInfo --target GL
