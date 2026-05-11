@@ -60,7 +60,6 @@ jobs:
             -DDEFAULT_ES=2 \
             -DNOX11=ON \
             -DNOEGL=OFF \
-            -DANGLE=ON \
             -DSTATICLIB=OFF \
             -DCMAKE_C_FLAGS="-Wno-error=implicit-function-declaration -Wno-error=unused-function -DNOGLX" \
             -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-undefined,dynamic_lookup -Wl,-w"
@@ -68,11 +67,21 @@ jobs:
           cp lib/libGL.dylib ../libgl4es_116.dylib
           ldid -S ../libgl4es_116.dylib
 
+      - name: Dump exported symbols
+        run: |
+          nm -gU libgl4es_116.dylib | grep " T " > gl4es_116_symbols.txt
+
       - name: Upload artifact
         uses: actions/upload-artifact@main
         with:
           name: libgl4es_116-v1.1.6
           path: libgl4es_116.dylib
+
+      - name: Upload symbols
+        uses: actions/upload-artifact@main
+        with:
+          name: gl4es_116_symbols
+          path: gl4es_116_symbols.txt
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
