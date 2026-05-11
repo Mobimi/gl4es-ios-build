@@ -69,7 +69,7 @@ jobs:
 
       - name: Dump exported symbols
         run: |
-          nm -gU libgl4es_116.dylib | grep " T " > gl4es_116_symbols.txt
+          nm -gU libgl4es_116.dylib > gl4es_116_symbols.txt || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@main
